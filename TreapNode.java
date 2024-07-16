@@ -2,7 +2,7 @@ public class TreapNode<T extends Comparable<T>> {
     T value;
     TreapNode<T> leftChild;
     TreapNode<T> rightChild;
-    int priority;
+    double priority;
 
     TreapNode<T> successor;
     TreapNode<T> predecessor;
@@ -13,7 +13,7 @@ public class TreapNode<T extends Comparable<T>> {
 
     public TreapNode(T value,TreapNode<T> predecessor,TreapNode<T> successor) {
         this.value = value;
-        this.priority = (int) (Math.random() * 100);
+        this.priority = Math.random();
         this.leftChild = null;
         this.rightChild = null;
         this.successor=successor;
