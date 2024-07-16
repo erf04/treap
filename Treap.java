@@ -1,31 +1,4 @@
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Queue;
-
-class TreapNode<T>{
-    T value;
-    TreapNode leftChild;
-    TreapNode<T> rightChild;
-    int priority;
-
-    public TreapNode(T value,int priority){
-        this.value=value;
-        this.priority=priority;
-        this.leftChild=null;
-        this.rightChild=null;
-    }
-
-    public TreapNode(){
-        this.value=null;
-        this.priority=Integer.MIN_VALUE;
-        this.leftChild=null;
-        this.rightChild=null;
-    }
-
-
-
-}
+import java.util.*;
 
 public class Treap<T extends Comparable<T>>  {
 
@@ -37,6 +10,21 @@ public class Treap<T extends Comparable<T>>  {
     public static final String ANSI_RED = "\u001B[31m";
     private static final String empty = "  ";
     private static int count =0;
+    private TreapNode<T> largest;
+    private TreapNode<T> smallest;
+
+
+    public boolean isEmpty(){
+        return this.root==null;
+    }
+
+    public T getLargestValue() {
+        return largest.value;
+    }
+
+    public T getSmallestValue() {
+        return smallest.value;
+    }
 
     Treap(){
         this.root=null;
@@ -47,132 +35,206 @@ public class Treap<T extends Comparable<T>>  {
     }
 
     int getHeight() {
-        return getHeightRec(this.root);
+        return height(this.root);
     }
 
     // A utility function to compute the height of the tree
-    static int getHeightRec(TreapNode node) {
+    private static int getHeightRec(TreapNode node) {
         if (node == null) {
-            return -1; // return -1 to count edges, or 0 to count nodes
+            return -1;
         } else {
-            // compute the height of each subtree
             int leftHeight = getHeightRec(node.leftChild);
             int rightHeight = getHeightRec(node.rightChild);
 
-            // use the larger one
+
             return Math.max(leftHeight, rightHeight) + 1;
         }
     }
 
-    public int getPriority(){
-        return (int) (Math.random() * 100);
+    private int height(TreapNode<T> node){
+        return node==null? 0 : node.height;
+    }
+
+    private int size(TreapNode<T> node) {
+        return node == null ? 0 : node.size;
+    }
+
+    private void setNewHeightAndSize(TreapNode<T> node){
+        if (node != null) {
+            node.height = Math.max(height(node.leftChild), height(node.rightChild)) + 1;
+            node.size = size(node.leftChild) + size(node.rightChild) + 1;
+        }
     }
 
     public void insert(T value){
-        this.root=insertNode(this.root,value);
+        this.root=insertRec(this.root,value,null,null);
     }
-    private TreapNode insertNode(TreapNode<T> root,T value){
+
+    // Recursive function to insert a new key in the BST and set pred/succ
+    private TreapNode<T> insertRec(TreapNode<T> root, T key, TreapNode<T> pred, TreapNode<T> succ) {
+        // If the tree is empty, return a new node
         if (root == null) {
-            return new TreapNode<T>(value,this.getPriority());
+            TreapNode<T> newNode = new TreapNode<T>(key,pred,succ);
+//            newNode.predecessor = pred;
+//            newNode.successor = succ;
+            if (pred != null)
+                pred.successor = newNode;
+            if (succ != null)
+                succ.predecessor = newNode;
+            if (pred == null)
+                this.smallest = newNode;
+            if (succ == null)
+                this.largest = newNode;
+            return newNode;
         }
 
-        // If key is smaller than root
-        if (value.compareTo(root.value)<=0) {
-            // Insert in left subtree
-            root.leftChild = insertNode(root.leftChild, value);
-
-            // Fix Heap property if it is violated
-            if (root.leftChild.priority > root.priority) {
+        // Otherwise, recur down the tree
+        if (key.compareTo(root.value) < 0) {
+            root.leftChild = insertRec(root.leftChild, key, pred, root);
+            if (root.leftChild != null && root.leftChild.priority > root.priority)
                 root = rightRotate(root);
-            }
-        } else { // If key is greater
-            // Insert in right subtree
-            root.rightChild = insertNode(root.rightChild, value);
 
-            // Fix Heap property if it is violated
-            if (root.rightChild.priority > root.priority) {
+        } else if (key.compareTo(root.value) > 0) {
+            root.rightChild = insertRec(root.rightChild, key, root, succ);
+            if (root.rightChild != null && root.rightChild.priority > root.priority)
                 root = leftRotate(root);
+        }
+
+        setNewHeightAndSize(root);
+
+        return root;
+    }
+
+    public boolean contains(T value){
+        return containsRec(this.root,value);
+    }
+
+    private boolean containsRec(TreapNode<T> rootNode,T value){
+        if (rootNode==null)
+            return false;
+        if (rootNode.value.compareTo(value)==0)
+            return true;
+        return containsRec(rootNode.value.compareTo(value) < 0 ? rootNode.rightChild : rootNode.leftChild,value);
+
+    }
+
+    public TreapNode<T> search(T value){
+        return searchRec(this.root,value);
+    }
+
+    private TreapNode<T> searchRec(TreapNode<T> rootNode,T value){
+        if (root == null) {
+            return null;
+        }
+        if (root.value.compareTo(value)==0)
+            return root;
+
+        if (value.compareTo(root.value) < 0 ) {
+            return searchRec(root.leftChild, value);
+        }
+
+        return searchRec(root.rightChild, value);
+    }
+
+
+
+    public TreapNode<T> remove(T value){
+        this.root=deleteRec(this.root,value);
+        return root;
+    }
+    private TreapNode<T> deleteRec(TreapNode<T> rootNode, T key) {
+        if (rootNode == null) return rootNode;
+
+        if (key.compareTo(rootNode.value)<0 ) {
+            rootNode.leftChild = deleteRec(rootNode.leftChild, key);
+        } else if (key.compareTo(rootNode.value) > 0) {
+            rootNode.rightChild = deleteRec(rootNode.rightChild, key);
+        } else {
+            if (rootNode.leftChild == null) {
+                TreapNode<T> temp = rootNode.rightChild;
+                if (rootNode.predecessor != null)
+                    rootNode.predecessor.successor = rootNode.successor;
+                if (rootNode.successor != null)
+                    rootNode.successor.predecessor = rootNode.predecessor;
+                if (rootNode == smallest)
+                    smallest = rootNode.successor;
+                if (rootNode == largest)
+                    largest = rootNode.predecessor;
+                rootNode = null;
+                return temp;
+            } else if (rootNode.rightChild == null) {
+                TreapNode<T> temp = rootNode.leftChild;
+                if (rootNode.predecessor != null)
+                    rootNode.predecessor.successor = rootNode.successor;
+                if (rootNode.successor != null)
+                    rootNode.successor.predecessor = rootNode.predecessor;
+                if (rootNode == smallest)
+                    smallest = rootNode.successor;
+                if (rootNode == largest)
+                    largest = rootNode.predecessor;
+                rootNode = null;
+                return temp;
+            }
+
+            if (rootNode.leftChild.priority < rootNode.rightChild.priority) {
+                rootNode = leftRotate(rootNode);
+                rootNode.leftChild = deleteRec(rootNode.leftChild, key);
+            } else {
+                rootNode = rightRotate(rootNode);
+                rootNode.rightChild = deleteRec(rootNode.rightChild, key);
             }
         }
-        return root;
+
+        // Update height of the current node
+        setNewHeightAndSize(rootNode);
+
+        return rootNode;
     }
 
-    public TreapNode<T> remove(T value) throws InterruptedException {
-//        draw(root, getHeightRec(root), true, value, true);
-        this.root=deleteNode(this.root,value);
-        System.out.println("after remove");
-//        draw();
-//        System.out.println(temp.value.toString());
-        return root;
-    }
-    private TreapNode<T> deleteNode(TreapNode<T> root, T key)
-    {
-        // Base case
-        if (root == null) {
-            return root;
-        }
-
-        // IF KEY IS NOT AT ROOT
-        if (key.compareTo(root.value)<0) {
-            root.leftChild = deleteNode(root.leftChild, key);
-        }
-        else if (key.compareTo(root.value)>0 ) {
-            root.rightChild = deleteNode(root.rightChild, key);
-        }
-
-        // IF KEY IS AT ROOT
-        // If left is null
-        else if (root.leftChild == null) {
-            TreapNode temp = root.rightChild;
-            root = null;
-            root = temp; // Make right child as root
-        }
-
-        // If right is null
-        else if (root.rightChild == null) {
-            TreapNode temp = root.leftChild;
-            root = null;
-            root = temp; // Make left child as root
-        }
-
-        // If key is at root and both left and right are not
-        // null
-        else if (root.leftChild.priority < root.rightChild.priority) {
-            root = leftRotate(root);
-            root.leftChild = deleteNode(root.leftChild, key);
-        }
-        else {
-            root = rightRotate(root);
-            root.rightChild = deleteNode(root.rightChild, key);
-        }
-
-        return root;
-    }
-
-    private static TreapNode rightRotate(TreapNode y) {
-        TreapNode x = y.leftChild;
-        TreapNode T2 = x.rightChild;
+    TreapNode<T> rightRotate(TreapNode<T> node) {
+        TreapNode<T> left = node.leftChild;
+        TreapNode<T> leftRight = left.rightChild;
 
         // Perform rotation
-        x.rightChild = y;
-        y.leftChild = T2;
+        left.rightChild = node;
+        node.leftChild = leftRight;
+//
+//        // Update predecessor and successor pointers
+//        if (node.predecessor != null)
+//            node.predecessor.successor = left;
+//        if (left.successor != null)
+//            left.successor.predecessor = node;
+//
+//        left.predecessor = node.predecessor;
+//        node.successor = left.successor;
+//
+//        node.predecessor = left;
+//        left.successor = node;
+        setNewHeightAndSize(node);
+        setNewHeightAndSize(left);
 
-        // Return new root
-        return x;
+        return left;
     }
 
-    // A utility function to left rotate subtree rooted with x
-// See the diagram given above.
-    public static TreapNode leftRotate(TreapNode x) {
-        TreapNode y = x.rightChild;
-        TreapNode T2 = y.leftChild;
+    public  TreapNode<T> leftRotate(TreapNode<T> x) {
+        TreapNode<T> right = x.rightChild;
+        TreapNode<T> rightLeft = right.leftChild;
+//
+        right.leftChild = x;
+        x.rightChild = rightLeft;
+//
+//        if (x.successor != null) x.successor.predecessor = right;
+//        if (right.predecessor != null) right.predecessor.successor = x;
+//
+//        right.predecessor = x.predecessor;
+//        x.successor = right.successor;
+//
+//        x.predecessor = right;
+//        right.successor = x;
+        setNewHeightAndSize(x);
+        setNewHeightAndSize(right);
 
-        // Perform rotation
-        y.leftChild = x;
-        x.rightChild = T2;
-
-        // Return new root
-        return y;
+        return right;
     }
 
 
@@ -241,9 +303,9 @@ public class Treap<T extends Comparable<T>>  {
         System.out.println("Tree:");
         draw(root, getHeightRec(root), true, null, false);
     }
-    public boolean search(T value) throws InterruptedException {
-        return search(root, value, true) != null;
-    }
+//    public boolean search(T value) throws InterruptedException {
+//        return search(root, value, true) != null;
+//    }
 
     private TreapNode<T> search(TreapNode<T> node, T value, Boolean print) throws InterruptedException {
         if (value.compareTo(node.value) < 0)
@@ -276,37 +338,8 @@ public class Treap<T extends Comparable<T>>  {
 
     }
 
-    public TreapNode<T> findkthSmallest(int k){
-        count=0;
-        return kthSmallest(this.getRoot(),k);
-    }
 
-    private TreapNode<T> kthSmallest(TreapNode<T> root, int k)
-    {
-        // base case
-        if (root == null)
-            return null;
 
-        // search in left subtree
-        TreapNode<T> left = kthSmallest(root.leftChild, k);
-
-        // if k'th smallest is found in left subtree, return it
-        if (left != null)
-            return left;
-
-        // if current element is k'th smallest, return it
-        count++;
-        if (count == k)
-            return root;
-
-        // else search in right subtree
-        return kthSmallest(root.rightChild, k);
-    }
-
-    public TreapNode<T> findkthLargest(int k){
-        count=0;
-        return KthLargestUsingMorrisTraversal(root,k);
-    }
 
 
     private TreapNode<T> KthLargestUsingMorrisTraversal(TreapNode<T> root, int k)
@@ -370,26 +403,56 @@ public class Treap<T extends Comparable<T>>  {
     }
 
     public TreapNode<T> min(){
-        return getMin(root);
+        return this.smallest;
     }
 
 
-    private TreapNode<T> getMin(TreapNode<T> root){
-        if (root.leftChild==null)
-            return root;
-
-        return getMin(root.leftChild);
-    }
 
     public TreapNode<T> max(){
-        return getMax(root);
+        return this.largest;
     }
 
-    private TreapNode<T> getMax(TreapNode<T> root){
-        if (root.rightChild==null)
+    public List<T> inOrder(){
+        List<T> inorderList=new ArrayList<>();
+        TreapNode<T> current=this.smallest;
+        while (current!=null){
+            inorderList.add(current.value);
+            current=current.successor;
+        }
+        return inorderList;
+    }
+
+    public TreapNode<T> kthSmallest(int k){
+        return kthSmallest(this.root,k);
+    }
+    private TreapNode<T> kthSmallest(TreapNode<T> root, int k) {
+        if (root == null) return null;
+
+        int leftSize = size(root.leftChild);
+        if (k == leftSize + 1) {
             return root;
-
-        return getMax(root.rightChild);
+        } else if (k <= leftSize) {
+            return kthSmallest(root.leftChild, k);
+        } else {
+            return kthSmallest(root.rightChild, k - leftSize - 1);
+        }
     }
+
+    public TreapNode<T> kthLargest(int k){
+        return kthLargest(this.root,k);
+    }
+    private TreapNode<T> kthLargest(TreapNode<T> root, int k) {
+        if (root == null) return null;
+
+        int rightSize = size(root.rightChild);
+        if (k == rightSize + 1) {
+            return root;
+        } else if (k <= rightSize) {
+            return kthLargest(root.rightChild, k);
+        } else {
+            return kthLargest(root.leftChild, k - rightSize - 1);
+        }
+    }
+
 
 }
