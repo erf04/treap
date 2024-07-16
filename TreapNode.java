@@ -22,12 +22,7 @@ public class TreapNode<T extends Comparable<T>> {
         this.size=1;
     }
 
-    public TreapNode() {
-        this.value = null;
-        this.priority = Integer.MIN_VALUE;
-        this.leftChild = null;
-        this.rightChild = null;
-    }
+
 
     @Override
     public String toString() {
