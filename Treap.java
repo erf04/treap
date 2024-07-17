@@ -90,17 +90,17 @@ public class Treap<T extends Comparable<T>>  {
     }
 
     private TreapNode<T> searchRec(TreapNode<T> rootNode,T value){
-        if (root == null) {
+        if (rootNode == null) {
             return null;
         }
-        if (root.value.compareTo(value)==0)
-            return root;
+        if (rootNode.value.compareTo(value)==0)
+            return rootNode;
 
-        if (value.compareTo(root.value) < 0 ) {
-            return searchRec(root.leftChild, value);
+        if (value.compareTo(rootNode.value) < 0 ) {
+            return searchRec(rootNode.leftChild, value);
         }
 
-        return searchRec(root.rightChild, value);
+        return searchRec(rootNode.rightChild, value);
     }
 
 
